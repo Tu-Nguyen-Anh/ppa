@@ -1,0 +1,461 @@
+<div #dialog
+  class="wd-overlay fixed inset-0 z-60 overflow-hidden font-family-body text-[#6e4a3f] outline-none select-text @container-[size]"
+  [class.wd-overlay--leaving]="leaving()" [hidden]="!visible()" [attr.inert]="leaving() ? '' : null"
+  role="dialog" aria-modal="true" [attr.aria-labelledby]="ids.title" tabindex="-1">
+
+  <h2 class="sr-only" [id]="ids.title">Lá thư 20/10 · {{ envelope().topLine }}</h2>
+
+  <button #closeButton type="button"
+    class="absolute right-[max(12px,env(safe-area-inset-right))] top-[calc(10px+env(safe-area-inset-top))] z-10 grid size-10 place-items-center rounded-lg border border-white/18 bg-white/8 text-[#ff8fbf] backdrop-blur-md transition-colors hover:bg-white/16 hover:text-[#ffc4dd] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff8fbf]"
+    aria-label="Đóng thư" (click)="requestClose()">
+    <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      aria-hidden="true" focusable="false">
+      <path d="M6 6l12 12M18 6 6 18" />
+    </svg>
+  </button>
+
+  <div class="absolute inset-0 bg-[#120a16]/85 backdrop-blur-sm" aria-hidden="true"></div>
+
+  <!-- Shared artwork: wax, heart, sparkle -->
+  <svg class="pointer-events-none absolute size-0 overflow-hidden" aria-hidden="true" focusable="false">
+    <defs>
+      <radialGradient [attr.id]="ids.wax" cx="38%" cy="32%" r="75%">
+        <stop offset="0" stop-color="#dc6c83" />
+        <stop offset="0.45" stop-color="#c0485f" />
+        <stop offset="0.85" stop-color="#9b3249" />
+        <stop offset="1" stop-color="#8f2a40" />
+      </radialGradient>
+      <radialGradient [attr.id]="ids.waxPress" cx="64%" cy="68%" r="72%">
+        <stop offset="0" stop-color="#c95a72" />
+        <stop offset="1" stop-color="#a1344c" />
+      </radialGradient>
+      <radialGradient [attr.id]="ids.gloss" cx="50%" cy="50%" r="50%">
+        <stop offset="0" stop-color="#ffffff" stop-opacity="0.5" />
+        <stop offset="1" stop-color="#ffffff" stop-opacity="0" />
+      </radialGradient>
+
+      <path [attr.id]="ids.heart" d="M0 7.5C-6 3.2-10-.4-10-4.4-10-7.6-7.6-9.6-5-9.6-2.8-9.6-1-8.4 0-6.4 1-8.4 2.8-9.6 5-9.6 7.6-9.6 10-7.6 10-4.4 10-.4 6 3.2 0 7.5Z" />
+      <path [attr.id]="ids.sparkle" d="M12 1.5c.7 5.6 4.9 9.8 10.5 10.5-5.6.7-9.8 4.9-10.5 10.5C11.3 16.9 7.1 12.7 1.5 12 7.1 11.3 11.3 7.1 12 1.5Z" />
+    </defs>
+  </svg>
+
+  <!-- Flower cluster: the images of one DECOR_CLUSTERS entry, laid out in the box they are placed in -->
+  <ng-template #flowers let-images>
+    @for (image of images; track $index) {
+    <img [src]="image.src" [width]="image.width" [height]="image.height" alt="" aria-hidden="true" loading="eager"
+      decoding="async" draggable="false" class="absolute h-auto max-w-none select-none" [style]="image.style" />
+    }
+  </ng-template>
+
+  <!-- Roses over the top-left corner of the letter paper (the real letter and its copy in the envelope) -->
+  <ng-template #paperCorner>
+    <span
+      class="pointer-events-none absolute -left-2.75 -top-2.75 block aspect-423/450 w-[min(54%,212px)] -translate-x-1/4 -translate-y-1/5 @min-[440px]:-left-3.75 @min-[440px]:-top-3.75"
+      aria-hidden="true">
+      <ng-container *ngTemplateOutlet="flowers; context: { $implicit: decor.corner }" />
+    </span>
+  </ng-template>
+
+  <!-- Roses tucked over the bottom-right corner of the letter photo -->
+  <ng-template #photoCorner>
+    <span
+      class="pointer-events-none absolute bottom-0 right-0 block aspect-6/5 w-[clamp(112px,46%,150px)] translate-x-[14%] translate-y-[24%]"
+      aria-hidden="true">
+      <ng-container *ngTemplateOutlet="flowers; context: { $implicit: decor.photo }" />
+    </span>
+  </ng-template>
+
+  <div
+    class="group/stage relative grid h-full w-full grid-cols-[minmax(0,1fr)] grid-rows-[minmax(0,1fr)] place-items-center px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-[calc(56px+env(safe-area-inset-top))]"
+    [attr.data-stage]="stage()" data-wd-backdrop (pointerdown)="onBackdropPointerDown($event)"
+    (pointerup)="onBackdropPointerUp($event)" (click)="onBackdropClick($event)">
+
+    @if (stage() !== 'open') {
+    <div class="col-start-1 row-start-1 flex flex-col items-center" data-wd-backdrop>
+      <div
+        class="wd-env-float @container relative aspect-8/5 w-[min(calc(100cqw-32px),560px,calc((100cqh-170px)*1.6))]">
+        <span
+          class="pointer-events-none absolute -inset-[22%] block bg-[radial-gradient(closest-side,rgba(255,143,191,0.24),rgba(255,143,191,0)_78%)] transition-opacity duration-500 group-data-[stage=opening]/stage:opacity-0"
+          aria-hidden="true"></span>
+
+        <button type="button"
+          class="absolute inset-0 block rounded-md transition-transform duration-300 select-none [-webkit-touch-callout:none] hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-[6px] focus-visible:outline-[#ff8fbf]"
+          [attr.aria-label]="envelopeLabel()" [attr.aria-describedby]="ids.hint"
+          [attr.aria-disabled]="stage() !== 'closed' ? 'true' : null" (click)="openEnvelope()">
+          <span class="wd-env-shift absolute inset-0 block" aria-hidden="true">
+            <!-- inside of the envelope -->
+            <span #envelopeBack
+              class="wd-env-back absolute inset-0 block rounded-md shadow-[0_28px_56px_-22px_rgba(0,0,0,0.75),0_2px_8px_rgba(0,0,0,0.3)]"></span>
+
+            <!-- Letter waiting in the pocket: the top of the letter laid out at the letter's width and scaled
+                 to the paper, so the real letter can take over from it seamlessly. Defaults fit when the
+                 letter is as wide as the envelope; openEnvelope() measures the real ratio. -->
+            <span #peek
+              class="wd-env-paper absolute inset-x-[5.5%] top-[4.5%] z-2 block h-[91%] overflow-hidden rounded-md shadow-[0_-1px_6px_rgba(138,79,61,0.16)]">
+              <span class="@container absolute left-0 top-0 block w-[100cqw] origin-top-left scale-[0.89] text-left"
+                [style.width.px]="replicaFrame()?.width" [style.scale]="replicaFrame()?.scale">
+                <span
+                  class="relative m-2.5 block min-h-[70cqw] rounded-md border border-[#f0d9cf] shadow-[inset_0_0_0_3px_#fffaf3,inset_0_0_0_4px_rgba(240,217,207,0.6)] @min-[440px]:m-3.5">
+                  <ng-container *ngTemplateOutlet="paperCorner" />
+                  <span class="relative block px-5 pt-19 @min-[440px]:px-9 @min-[440px]:pt-22">
+                    <span
+                      class="block wrap-break-word font-['Great_Vibes'] text-[clamp(36px,9cqw,44px)] leading-[1.15] text-[#a55e4d]">{{
+                      greeting() }}</span>
+                    <span
+                      class="mt-3 block whitespace-pre-line wrap-break-word indent-[1.2em] font-['Dancing_Script'] text-[clamp(19px,4.6cqw,22px)] font-medium leading-[1.6] text-[#6e4a3f]">{{
+                      paragraphs()[0] }}</span>
+                  </span>
+                </span>
+              </span>
+            </span>
+
+            <!-- pockets -->
+            <span class="absolute inset-0 z-3 block drop-shadow-[0_1px_2px_rgba(138,79,61,0.2)]">
+              <span class="wd-env-side wd-env-side--left absolute inset-0 block rounded-md"></span>
+              <span class="wd-env-side wd-env-side--right absolute inset-0 block rounded-md"></span>
+            </span>
+            <span class="absolute inset-0 z-4 block drop-shadow-[0_-2px_3px_rgba(138,79,61,0.22)]">
+              <span class="wd-env-bottom absolute inset-0 block rounded-md"></span>
+            </span>
+            <!-- flowers on the pocket (they stay in front of the paper while it rises) -->
+            <span class="pointer-events-none absolute inset-0 z-4 block overflow-hidden rounded-md">
+              <span class="absolute bottom-0 left-0 block aspect-square w-[30%] @min-[300px]:w-[36%]">
+                <ng-container *ngTemplateOutlet="flowers; context: { $implicit: decor.pocket }" />
+              </span>
+              <span class="absolute right-0 top-[16%] block aspect-square w-[20%] @min-[300px]:w-[24%]">
+                <ng-container *ngTemplateOutlet="flowers; context: { $implicit: decor.side }" />
+              </span>
+            </span>
+            <span
+              class="absolute inset-x-[21%] bottom-[8%] z-4 line-clamp-2 text-center font-serif text-[clamp(10.5px,2.25cqw,14px)] italic leading-[1.45] tracking-widest wrap-break-word text-[#8a4f3d] text-shadow-[0_0_3px_#f7d5da,0_0_6px_#f7d5da] @min-[300px]:inset-x-[27%]">{{
+              envelope().bottomLine }}</span>
+
+            <!-- flap -->
+            <span class="wd-env-flap absolute inset-x-0 top-0 z-5 block h-[63%] perspective-[260cqw]">
+              <span class="wd-env-flap-inner absolute inset-0 block">
+                <span class="wd-env-flap-front absolute inset-0 block rounded-t-md">
+                  <span
+                    class="absolute inset-x-[25%] top-[9%] flex flex-col items-center text-center @min-[300px]:inset-x-[29%]">
+                    <!-- one line on tiny envelopes, where a second one would push the headline onto the seal -->
+                    <span
+                      class="max-w-full truncate font-serif text-[clamp(11px,2.55cqw,15px)] leading-[1.35] tracking-widest wrap-break-word text-[#8a4f3d] text-shadow-[0_0_3px_#fae1e4,0_0_6px_#fae1e4] @min-[300px]:line-clamp-2 @min-[300px]:whitespace-normal">{{
+                      envelope().topLine }}</span>
+                    <span class="mt-[1.1cqw] flex items-center gap-[1.6cqw] text-[#cf8f9a]">
+                      <span class="block h-px w-[5.5cqw] bg-current"></span>
+                      <svg class="h-[max(9px,1.9cqw)] w-[max(10px,2.1cqw)] text-[#d4697f]" viewBox="-10.5 -10 21 18"
+                        focusable="false">
+                        <use [attr.href]="href.heart" fill="currentColor" />
+                      </svg>
+                      <span class="block h-px w-[5.5cqw] bg-current"></span>
+                    </span>
+                    <span
+                      class="mt-[0.4cqw] block font-['Great_Vibes'] text-[clamp(30px,10.8cqw,64px)] leading-[1.1] text-[#a85c47] text-shadow-[0_1px_0_rgba(255,255,255,0.55)]">{{
+                      envelope().headline }}</span>
+                  </span>
+                </span>
+                <!-- flowers on the flap, top-right: they turn with it and vanish with its front face (~90deg) -->
+                <span
+                  class="pointer-events-none absolute inset-x-0 top-0 block h-[158.73%] overflow-hidden rounded-md transition-opacity delay-220 duration-0 group-data-[stage=opening]/stage:opacity-0">
+                  <span class="absolute right-0 top-0 block aspect-5/4 w-[42%] @min-[300px]:w-1/2">
+                    <ng-container *ngTemplateOutlet="flowers; context: { $implicit: decor.flap }" />
+                  </span>
+                </span>
+                <span class="wd-env-flap-back absolute inset-0 block"></span>
+              </span>
+            </span>
+
+            <!-- wax seal -->
+            <span class="wd-env-seal absolute left-1/2 top-[60%] z-6 block w-[15.5%] -translate-x-1/2 -translate-y-1/2">
+              <!-- greenery tucked under the seal (falls away with it) -->
+              <span
+                class="pointer-events-none absolute left-1/2 top-1/2 block aspect-8/5 w-[230%] -translate-x-1/2 -translate-y-1/2 @min-[300px]:w-[260%]">
+                <ng-container *ngTemplateOutlet="flowers; context: { $implicit: decor.seal }" />
+              </span>
+              <svg class="relative block h-auto w-full drop-shadow-[0_3px_4px_rgba(70,14,30,0.45)]" viewBox="0 0 120 120"
+                focusable="false">
+                <path [attr.fill]="url.wax" stroke="#7a2236" stroke-opacity="0.55" stroke-width="1.2"
+                  d="M65.76 7.82C73.6 8.29 82.92 8.96 89.42 12.94 95.93 16.92 101.19 24.84 104.81 31.7 108.44 38.57 110 46.41 111.16 54.12 112.32 61.83 113.61 70.35 111.76 77.99 109.92 85.62 105.78 94.54 100.11 99.93 94.44 105.33 85.38 108.44 77.75 110.36 70.11 112.29 62.03 112.26 54.31 111.49 46.59 110.71 38.26 109.37 31.42 105.7 24.59 102.03 17.21 96.09 13.33 89.47 9.45 82.85 8.96 73.86 8.14 65.96 7.32 58.06 6.42 49.68 8.42 42.08 10.43 34.48 14.51 25.68 20.17 20.35 25.84 15.02 34.82 12.2 42.42 10.11 50.02 8.02 57.93 7.34 65.76 7.82Z" />
+                <circle cx="60" cy="60" r="44.5" fill="none" stroke="#e98ba0" stroke-opacity="0.28" stroke-width="1.4" />
+                <circle cx="60" cy="60" r="37.5" [attr.fill]="url.waxPress" />
+                <circle cx="60" cy="60" r="37.5" fill="none" stroke="#6c1b2f" stroke-opacity="0.5" stroke-width="1.6" />
+                <circle cx="60.7" cy="60.9" r="38.7" fill="none" stroke="#f3a6b6" stroke-opacity="0.42" stroke-width="1" />
+                <circle cx="60" cy="60" r="32" fill="none" stroke="#f6b9c6" stroke-opacity="0.38" stroke-width="1"
+                  stroke-dasharray="1.2 3" />
+                <g transform="translate(60 47.5)">
+                  <use [attr.href]="href.heart" transform="translate(.8 .9)" fill="#5e1427" fill-opacity="0.5" />
+                  <use [attr.href]="href.heart" transform="translate(-.8 -.9)" fill="#f7b4c3" fill-opacity="0.55" />
+                  <use [attr.href]="href.heart" fill="#b8445d" />
+                </g>
+                <g font-family="'Libre Baskerville', Georgia, serif" font-size="15.5" font-weight="700"
+                  text-anchor="middle" letter-spacing="0.4">
+                  <text x="60.8" y="78.9" fill="#5e1427" fill-opacity="0.5">20/10</text>
+                  <text x="59.2" y="77.1" fill="#f7b4c3" fill-opacity="0.55">20/10</text>
+                  <text x="60" y="78" fill="#b8445d">20/10</text>
+                </g>
+                <ellipse cx="42" cy="33" rx="17" ry="8" [attr.fill]="url.gloss" transform="rotate(-32 42 33)" />
+              </svg>
+            </span>
+          </span>
+        </button>
+      </div>
+
+      <p [id]="ids.hint"
+        class="mt-6 text-center text-[14px] font-medium tracking-wide text-[#ffd6e7] transition-opacity duration-300 group-data-[stage=opening]/stage:opacity-0">
+        <span class="wd-hint-pulse inline-flex items-center gap-2">
+          <svg class="size-3 text-[#ff8fbf]" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <use [attr.href]="href.sparkle" fill="currentColor" />
+          </svg>
+          Chạm phong bì để mở thư
+          <svg class="size-3 text-[#ff8fbf]" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <use [attr.href]="href.sparkle" fill="currentColor" />
+          </svg>
+        </span>
+      </p>
+    </div>
+    }
+
+    @if (stage() !== 'closed') {
+    <article #letter
+      class="wd-letter @container relative col-start-1 row-start-1 flex max-h-full w-[min(calc(100cqw-32px),560px)] origin-top-left flex-col rounded-lg bg-[#fffaf3] outline-none"
+      tabindex="-1" [attr.aria-labelledby]="ids.greeting">
+      <div #paper
+        class="wd-paper relative min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain rounded-lg shadow-[0_34px_70px_-26px_rgba(0,0,0,0.8),0_0_0_1px_rgba(240,217,207,0.75)]">
+        <div
+          class="relative m-2.5 rounded-md border border-[#f0d9cf] shadow-[inset_0_0_0_3px_#fffaf3,inset_0_0_0_4px_rgba(240,217,207,0.6)] @min-[440px]:m-3.5">
+          <ng-container *ngTemplateOutlet="paperCorner" />
+
+          <div class="relative px-5 pb-2 pt-19 @min-[440px]:px-9 @min-[440px]:pt-22">
+            <h3 [id]="ids.greeting"
+              class="wrap-break-word font-['Great_Vibes'] text-[clamp(36px,9cqw,44px)] font-normal leading-[1.15] text-[#a55e4d]">
+              {{ greeting() }}</h3>
+
+            @if (photo(); as src) {
+            <figure
+              class="relative float-right mb-8 ml-5 mt-3 hidden w-[40%] max-w-52.5 rotate-[2.5deg] rounded-md bg-white p-1.5 pb-2.5 shadow-[0_12px_26px_-12px_rgba(110,74,63,0.55),0_0_0_1px_rgba(240,217,207,0.9)] @min-[440px]:block">
+              <span
+                class="absolute -top-2.5 left-1/2 block h-5 w-16 -translate-x-1/2 -rotate-3 bg-[#f7c9d3]/75 shadow-[0_1px_2px_rgba(138,79,61,0.15)]"
+                aria-hidden="true"></span>
+              <img [src]="src" alt="Ảnh kỷ niệm trong lá thư" loading="lazy" decoding="async"
+                class="block aspect-4/5 w-full rounded-sm bg-[#f6ebe4] object-cover" (error)="photoFailed.set(true)" />
+              <ng-container *ngTemplateOutlet="photoCorner" />
+            </figure>
+            }
+
+            <div
+              class="mt-3 space-y-3 font-['Dancing_Script'] text-[clamp(19px,4.6cqw,22px)] font-medium leading-[1.6] text-[#6e4a3f]">
+              @for (paragraph of paragraphs(); track $index) {
+              <p class="whitespace-pre-line wrap-break-word first:indent-[1.2em]">{{ paragraph }}</p>
+              }
+            </div>
+
+            @if (photo(); as src) {
+            <figure
+              class="relative mx-auto mb-5 mt-7 w-full max-w-[320px] -rotate-[1.5deg] rounded-md bg-white p-1.5 pb-2.5 shadow-[0_12px_26px_-12px_rgba(110,74,63,0.55),0_0_0_1px_rgba(240,217,207,0.9)] @min-[440px]:hidden">
+              <span
+                class="absolute -top-2.5 left-1/2 block h-5 w-16 -translate-x-1/2 rotate-2 bg-[#f7c9d3]/75 shadow-[0_1px_2px_rgba(138,79,61,0.15)]"
+                aria-hidden="true"></span>
+              <img [src]="src" alt="Ảnh kỷ niệm trong lá thư" loading="lazy" decoding="async"
+                class="block aspect-4/5 w-full rounded-sm bg-[#f6ebe4] object-cover" (error)="photoFailed.set(true)" />
+              <ng-container *ngTemplateOutlet="photoCorner" />
+            </figure>
+            }
+
+            <div class="clear-both flex items-end justify-end gap-2 pt-6">
+              @if (!photo()) {
+              <!-- no photo: the bottom-right flowers sit beside the signature -->
+              <span class="pointer-events-none relative -mb-1 block aspect-8/5 w-[34%] max-w-36 shrink-0"
+                aria-hidden="true">
+                <ng-container *ngTemplateOutlet="flowers; context: { $implicit: decor.signature }" />
+              </span>
+              }
+              <p
+                class="min-w-0 wrap-break-word text-right font-['Great_Vibes'] text-[clamp(30px,7.5cqw,38px)] leading-[1.2] text-[#a55e4d]">
+                {{ signature() }}</p>
+            </div>
+
+            <!-- Reply -->
+            <section class="mt-8" [attr.aria-labelledby]="ids.replyTitle">
+              <div class="mb-5 flex items-center gap-3" aria-hidden="true">
+                <span class="h-px flex-1 bg-linear-to-r from-[#ecc8bf]/0 to-[#ecc8bf]"></span>
+                <svg class="size-3.5 text-[#e58ba5]" viewBox="-10.5 -10 21 18" focusable="false">
+                  <use [attr.href]="href.heart" fill="currentColor" />
+                </svg>
+                <span class="h-px flex-1 bg-linear-to-l from-[#ecc8bf]/0 to-[#ecc8bf]"></span>
+              </div>
+
+              <h4 [id]="ids.replyTitle"
+                class="flex items-start justify-center gap-2 text-center text-[15px] font-bold leading-snug text-[#8a4f3d]">
+                <svg class="mt-px size-4.5 shrink-0 text-[#c2456a]" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+                  aria-hidden="true" focusable="false">
+                  <path d="M3.5 6.5h17v11h-17z" />
+                  <path d="m4 7 8 6 8-6" />
+                </svg>
+                <span class="min-w-0 wrap-break-word">Gửi hồi âm cho {{ senderLabel() }}</span>
+              </h4>
+
+              @if (replyMode() === 'sent' && sentReply(); as sent) {
+              <div #thanks
+                class="mt-5 rounded-lg border border-[#f2d5cd] bg-[#fff3f1]/85 px-5 py-6 text-center outline-none"
+                role="status" tabindex="-1">
+                <svg class="mx-auto size-11" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+                  <path d="M6 15h36v24H6z" fill="#fbe1e6" stroke="#d98a9d" stroke-width="1.6" stroke-linejoin="round" />
+                  <path d="m7 16 17 13 17-13" fill="none" stroke="#d98a9d" stroke-width="1.6" stroke-linejoin="round" />
+                  <path fill="#c2456a"
+                    d="M24 25.6c-4-2.9-6.2-5-6.2-7.6 0-1.9 1.5-3.3 3.3-3.3 1.2 0 2.2.6 2.9 1.6.7-1 1.7-1.6 2.9-1.6 1.8 0 3.3 1.4 3.3 3.3 0 2.6-2.2 4.7-6.2 7.6Z" />
+                </svg>
+                <p class="mt-2 font-['Great_Vibes'] text-[34px] leading-tight text-[#a55e4d]">Đã gửi hồi âm 💌</p>
+                @if (sentIsPreview()) {
+                <p class="mt-1 text-[13px] font-semibold text-[#b07f71]">Bản xem trước — hồi âm chưa được gửi thật.</p>
+                }
+                @if (sentAnswerLabel(); as answerLabel) {
+                <p class="mt-2 text-[14px] text-[#8a4f3d]">Bạn đã chọn: <span class="font-bold text-[#c2456a]">{{
+                    answerLabel }}</span></p>
+                }
+                @if (sentExcerpt(); as excerpt) {
+                <p
+                  class="mt-3 whitespace-pre-line wrap-break-word font-['Dancing_Script'] text-[19px] font-medium leading-snug text-[#6e4a3f]">
+                  “{{ excerpt }}”</p>
+                }
+                <button type="button"
+                  class="mt-4 inline-flex min-h-10 items-center gap-1.5 rounded-md px-3 text-[14px] font-bold text-[#c2456a] underline decoration-[#f0a9bd] decoration-2 underline-offset-4 transition-colors hover:text-[#9f3355] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c2456a]"
+                  (click)="writeAnother()">
+                  Gửi thêm lời nhắn
+                </button>
+              </div>
+              } @else {
+              <form class="mt-5 space-y-4" novalidate (submit)="submitReply($event)">
+                @if (hasQuestion()) {
+                <div role="group" class="rounded-lg border border-[#f1dcd3] bg-white/55 p-3 @min-[440px]:p-4"
+                  [attr.aria-labelledby]="ids.question"
+                  [attr.aria-describedby]="answerErrorVisible() ? ids.answerError : null">
+                  <p [id]="ids.question"
+                    class="wrap-break-word text-center font-['Dancing_Script'] text-[22px] font-semibold leading-snug text-[#7a4a3c]">
+                    {{ question() }}</p>
+                  <div class="mt-3 grid grid-cols-2 gap-2">
+                    @for (option of answerOptions; track option.value) {
+                    <button #answerButton type="button"
+                      class="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-[#e9c6c9] bg-white/85 px-2 py-2 text-center text-[15px] font-bold leading-tight text-[#8a4f3d] transition-colors hover:border-[#e39aac] hover:bg-[#fff4f6] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c2456a] aria-pressed:border-[#c2456a] aria-pressed:bg-[#c2456a] aria-pressed:text-white aria-pressed:shadow-[0_8px_18px_-8px_rgba(194,69,106,0.7)]"
+                      [attr.aria-pressed]="replyAnswer() === option.value" (click)="selectAnswer(option.value)">
+                      @if (replyAnswer() === option.value) {
+                      <svg class="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+                        focusable="false">
+                        <path d="m5 12.5 4.5 4.5L19 7.5" />
+                      </svg>
+                      }
+                      {{ option.label }}
+                    </button>
+                    }
+                  </div>
+                  @if (answerErrorVisible()) {
+                  <p [id]="ids.answerError" class="mt-2 text-center text-[13px] font-semibold text-[#c0392b]">
+                    Vui lòng chọn một câu trả lời.</p>
+                  }
+                </div>
+                }
+
+                <div>
+                  <label [for]="ids.name" class="mb-1.5 block text-[13px] font-bold tracking-wide text-[#8a4f3d]">
+                    Tên của bạn <span class="text-[#c2456a]" aria-hidden="true">*</span>
+                  </label>
+                  <input #nameInput [id]="ids.name" type="text" name="name" autocomplete="name" enterkeyhint="next"
+                    required [attr.maxlength]="limits.replyNameLength" [value]="replyName()"
+                    [attr.aria-invalid]="nameErrorVisible() ? 'true' : null"
+                    [attr.aria-describedby]="nameErrorVisible() ? ids.nameError : null" placeholder="Ví dụ: Lan Anh"
+                    class="block w-full rounded-md border border-[#ead0c7] bg-white/85 px-3.5 py-2.5 text-base leading-6 text-[#5b3a31] shadow-[inset_0_1px_2px_rgba(138,79,61,0.06)] outline-none transition placeholder:text-[#bfa197] focus:border-[#e08aa2] focus:bg-white focus:ring-3 focus:ring-[#f4b6c8]/45 aria-invalid:border-[#d0545f]"
+                    (input)="onNameInput($event)" (focus)="revealField($event)" />
+                  @if (nameErrorVisible()) {
+                  <p [id]="ids.nameError" class="mt-1.5 text-[13px] font-semibold text-[#c0392b]">Vui lòng nhập tên
+                    của bạn.</p>
+                  }
+                </div>
+
+                <div>
+                  <div class="mb-1.5 flex items-baseline justify-between gap-3">
+                    <label [for]="ids.message" class="text-[13px] font-bold tracking-wide text-[#8a4f3d]">
+                      Lời nhắn
+                      @if (hasQuestion()) {
+                      <span class="font-semibold text-[#b99a90]">(không bắt buộc)</span>
+                      } @else {
+                      <span class="text-[#c2456a]" aria-hidden="true">*</span>
+                      }
+                    </label>
+                    <span class="shrink-0 text-[12px] tabular-nums text-[#b99a90]" aria-hidden="true">{{
+                      replyMessage().length }}/{{ limits.replyMessageLength }}</span>
+                  </div>
+                  <textarea #messageInput [id]="ids.message" name="message" rows="4" enterkeyhint="enter"
+                    [required]="!hasQuestion()" [attr.maxlength]="limits.replyMessageLength" [value]="replyMessage()"
+                    [attr.aria-invalid]="messageErrorVisible() ? 'true' : null"
+                    [attr.aria-describedby]="messageErrorVisible() ? ids.messageHint + ' ' + ids.messageError : ids.messageHint"
+                    [attr.placeholder]="'Viết đôi lời gửi ' + senderLabel() + '…'"
+                    class="block min-h-28 w-full resize-y rounded-md border border-[#ead0c7] bg-white/85 px-3.5 py-2.5 text-base leading-6 text-[#5b3a31] shadow-[inset_0_1px_2px_rgba(138,79,61,0.06)] outline-none transition placeholder:text-[#bfa197] focus:border-[#e08aa2] focus:bg-white focus:ring-3 focus:ring-[#f4b6c8]/45 aria-invalid:border-[#d0545f]"
+                    (input)="onMessageInput($event)" (focus)="revealField($event)"></textarea>
+                  <p [id]="ids.messageHint" class="sr-only">Tối đa {{ limits.replyMessageLength }} ký tự.</p>
+                  @if (messageErrorVisible()) {
+                  <p [id]="ids.messageError" class="mt-1.5 text-[13px] font-semibold text-[#c0392b]">Vui lòng viết vài
+                    lời nhắn.</p>
+                  }
+                </div>
+
+                <button type="submit" [disabled]="sending()"
+                  class="inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#c2456a] px-6 text-[15px] font-bold text-white shadow-[0_10px_22px_-10px_rgba(194,69,106,0.8)] transition-colors hover:bg-[#ab3a5c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c2456a] disabled:cursor-not-allowed! disabled:opacity-75">
+                  @if (sending()) {
+                  <span class="size-4 animate-spin rounded-full border-2 border-white/35 border-t-white"
+                    aria-hidden="true"></span>
+                  Đang gửi…
+                  } @else {
+                  <svg class="size-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                    <path d="M21 3 10.2 13.8" />
+                    <path d="m21 3-6.8 18-4-7.2L3 9.8 21 3Z" />
+                  </svg>
+                  Gửi hồi âm
+                  }
+                </button>
+              </form>
+              }
+            </section>
+
+            @if (shownReplies().length) {
+            <section class="mt-9" [attr.aria-labelledby]="ids.repliesTitle">
+              <h4 [id]="ids.repliesTitle" class="flex items-center gap-2 text-[15px] font-bold text-[#8a4f3d]">
+                Hồi âm đã nhận
+                <span class="rounded-sm bg-[#fbe3e9] px-1.5 py-0.5 text-[12px] font-bold leading-none text-[#b23a5e]">{{
+                  shownReplies().length }}</span>
+              </h4>
+              <ul class="mt-3 space-y-2.5">
+                @for (reply of shownReplies(); track reply.key) {
+                <li class="rounded-lg border border-[#f1dcd3] bg-white/60 px-3.5 py-3">
+                  <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span class="min-w-0 wrap-break-word text-[14px] font-bold text-[#8a4f3d]">{{ reply.name }}</span>
+                    @if (reply.answerLabel) {
+                    <span class="rounded-sm px-1.5 py-0.5 text-[11px] font-bold leading-none"
+                      [class]="reply.positive ? 'bg-[#fde2ea] text-[#b23a5e]' : 'bg-[#f3ebe7] text-[#7d6156]'">{{
+                      reply.answerLabel }}</span>
+                    }
+                    @if (reply.relative) {
+                    <time class="ml-auto text-[12px] text-[#a98b80]" [attr.datetime]="reply.iso">{{ reply.relative
+                      }}</time>
+                    }
+                  </div>
+                  @if (reply.message) {
+                  <p
+                    class="mt-1.5 whitespace-pre-line wrap-break-word font-['Dancing_Script'] text-[18px] font-medium leading-snug text-[#6e4a3f]">
+                    {{ reply.message }}</p>
+                  }
+                </li>
+                }
+              </ul>
+            </section>
+            }
+
+            <div class="pointer-events-none sticky bottom-0 -mx-5 h-8 bg-linear-to-t from-[#fffaf3] to-[#fffaf3]/0 @min-[440px]:-mx-9"
+              aria-hidden="true"></div>
+          </div>
+        </div>
+      </div>
+    </article>
+    }
+  </div>
+</div>

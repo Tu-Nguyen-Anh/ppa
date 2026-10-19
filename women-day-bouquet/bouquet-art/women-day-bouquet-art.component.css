@@ -1,0 +1,146 @@
+/*
+ * Bouquet artwork: only what Tailwind cannot express (keyframes and animation states). Animations use the individual
+ * transform properties (rotate / scale / translate) so they compose with each layer's own transform.
+ * Per-slot stagger delays are part of the bound layer styles.
+ */
+
+/* Idle sway around the tie point (200, 338) of the 400 × 512 art box */
+.wd-sway {
+  transform-origin: 50% 66.02%;
+  animation: wd-sway 6s ease-in-out infinite;
+}
+
+/* Reveal: the slot rose dissolves and the photo card grows out of its centre */
+.wd-out {
+  animation: wd-rose-out 0.9s cubic-bezier(0.22, 0.75, 0.25, 1) both;
+}
+
+.wd-photo {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.wd-photo.wd-in {
+  animation: wd-photo-in 1.2s cubic-bezier(0.22, 0.75, 0.25, 1) both;
+}
+
+/* Butterflies: a slow drift on the wrapper, short wing beats then a rest on the image */
+.wd-drift {
+  animation: wd-drift 7s ease-in-out infinite;
+}
+
+.wd-drift.wd-alt {
+  animation-duration: 8.6s;
+  animation-delay: -3.4s;
+}
+
+.wd-flutter {
+  animation: wd-flutter 4.2s ease-in-out infinite;
+}
+
+.wd-flutter.wd-alt {
+  animation-duration: 5.1s;
+  animation-delay: -2.2s;
+}
+
+@keyframes wd-sway {
+  0%,
+  100% {
+    rotate: -0.6deg;
+  }
+
+  50% {
+    rotate: 0.6deg;
+  }
+}
+
+@keyframes wd-rose-out {
+  0% {
+    scale: 1;
+    filter: blur(0);
+    opacity: 1;
+  }
+
+  30% {
+    scale: 1.08;
+    filter: blur(1.5px);
+    opacity: 0.85;
+  }
+
+  100% {
+    scale: 0.88;
+    filter: blur(6px);
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@keyframes wd-photo-in {
+  from {
+    scale: 0.6;
+    filter: blur(8px);
+    opacity: 0;
+    visibility: visible;
+  }
+
+  to {
+    scale: none;
+    filter: none;
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+@keyframes wd-drift {
+  0%,
+  100% {
+    translate: 0 0;
+    rotate: 0deg;
+  }
+
+  50% {
+    translate: 9% -14%;
+    rotate: 5deg;
+  }
+}
+
+/* Wings fold up (narrower from above) twice, then open and rest */
+@keyframes wd-flutter {
+  0%,
+  28%,
+  100% {
+    scale: 1 1;
+  }
+
+  7% {
+    scale: 0.58 1;
+  }
+
+  14% {
+    scale: 0.97 1;
+  }
+
+  21% {
+    scale: 0.66 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wd-sway,
+  .wd-drift,
+  .wd-flutter {
+    animation: none;
+  }
+
+  .wd-out {
+    animation: none;
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  .wd-photo.wd-in {
+    animation: none;
+    opacity: 1;
+    visibility: visible;
+  }
+}

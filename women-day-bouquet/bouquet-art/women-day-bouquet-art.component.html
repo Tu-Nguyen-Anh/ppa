@@ -1,0 +1,40 @@
+<!--
+  Raster layers of bouquet-layers.ts in a 400 × 512 box (percent units). On reveal, every slot rose that has a photo
+  dissolves and its photo card grows out of it; the cards sit between the flowers and the front wrap.
+-->
+<div class="relative aspect-400/512 w-full">
+  <!-- Soft pink glow behind the flowers: it brightens as the photos bloom and snaps back on reset -->
+  <div
+    class="absolute -left-[12%] -top-[9%] h-[88%] w-[124%] bg-[radial-gradient(closest-side,rgba(255,122,182,0.3),rgba(255,122,182,0.11)_55%,rgba(255,122,182,0)_100%)] ease-out motion-reduce:transition-none"
+    [class.transition-opacity]="revealed()" [class.duration-1200]="revealed()" [class.opacity-70]="!revealed()"></div>
+
+  <!-- The whole bouquet sways gently around the tie point -->
+  <div class="wd-sway absolute inset-0">
+    @for (layer of layers; track $index) {
+      @if (layer.butterfly) {
+        <span class="wd-drift absolute block" [class.wd-alt]="layer.alt" [class.invisible]="isBroken(layer.src)"
+          [style]="layer.style">
+          <img #image class="wd-flutter block h-auto w-full max-w-none" [class.wd-alt]="layer.alt" [src]="layer.src"
+            alt="" loading="eager" decoding="async" draggable="false" (error)="markBroken(layer.src)">
+        </span>
+      } @else {
+        <img #image class="absolute block h-auto max-w-none"
+          [class.wd-out]="layer.slot !== null && dissolved()[layer.slot]" [class.invisible]="isBroken(layer.src)"
+          [style]="layer.style" [src]="layer.src" alt="" loading="eager" decoding="async" draggable="false"
+          (error)="markBroken(layer.src)">
+      }
+    }
+
+    <!-- Photo cards, mounted before the reveal so the photos preload -->
+    @for (card of cards(); track card.index) {
+      @if (card.photo; as src) {
+        <span
+          class="wd-photo absolute box-border block rounded-xs bg-[#fff8f1] p-[1.5%] shadow-[0_6px_14px_-4px_rgba(40,10,20,0.6),0_0_0_0.5px_rgba(214,178,166,0.7)]"
+          [class.wd-in]="card.shown" [style]="card.style">
+          <img #image class="block h-full w-full rounded-[1px] bg-[#f2ded6] object-cover" [src]="src" alt=""
+            loading="lazy" decoding="async" draggable="false" (error)="markBroken(src)">
+        </span>
+      }
+    }
+  </div>
+</div>

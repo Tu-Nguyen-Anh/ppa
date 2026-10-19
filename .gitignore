@@ -1,0 +1,20 @@
+# Dependencies & build output
+**/node_modules/
+**/dist/
+**/.angular/
+**/out-tsc/
+**/tmp/
+
+# Logs & caches
+*.log
+npm-debug.log*
+yarn-error.log*
+.sass-cache/
+/coverage
+
+# Editors / OS
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
