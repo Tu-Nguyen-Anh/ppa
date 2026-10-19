@@ -22,6 +22,7 @@ import {
   parseWomenDayContent
 } from '../../../models/women-day-content';
 import { WomenDayBouquetArtComponent } from './bouquet-art/women-day-bouquet-art.component';
+import { LED_NAME_PATH, LED_NAME_VIEWBOX } from './led-name';
 import { WomenDayLetterComponent } from './letter/women-day-letter.component';
 import { WomenDayScene } from './women-day-scene';
 
@@ -120,6 +121,10 @@ export class WomenDayBouquetComponent {
   /** Background music: the user's intent (on by default) and whether it is actually playing. */
   protected readonly musicWanted = signal(true);
   protected readonly musicPlaying = signal(false);
+
+  /** Handwriting (neon) name drawn on the night sky; the SVG path is pre-generated from the name. */
+  protected readonly ledPath = LED_NAME_PATH;
+  protected readonly ledViewBox = LED_NAME_VIEWBOX;
 
   protected readonly hintText = computed(() => (this.phase() === 'intro' ? 'Chạm vào bó hoa' : 'Đang mở quà…'));
   protected readonly bouquetLabel = computed(() => (this.phase() === 'intro' ? 'Chạm để mở bó hoa' : 'Mở quà ngay'));

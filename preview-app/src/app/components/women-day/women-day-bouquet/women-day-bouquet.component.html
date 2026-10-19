@@ -10,6 +10,17 @@
     class="absolute inset-0 block h-full w-full touch-none transition-opacity duration-[1400ms] ease-out motion-reduce:transition-none"
     [class.opacity-0]="!sceneReady()" aria-hidden="true"></canvas>
 
+  @if (phase() === 'sky' && receiverName()) {
+  <!-- Background neon name on the night sky: the stroke lights up along the handwriting path, then loops -->
+  <div class="wd-led-stage pointer-events-none absolute inset-0 flex items-center justify-center"
+    aria-hidden="true">
+    <svg class="wd-led-svg" [attr.viewBox]="ledViewBox" fill="none" preserveAspectRatio="xMidYMid meet">
+      <path class="wd-led-base" [attr.d]="ledPath" />
+      <path class="wd-led-draw" [attr.d]="ledPath" pathLength="1" />
+    </svg>
+  </div>
+  }
+
   @if (phase() !== 'sky') {
   <!-- Bouquet stage: a tap makes the photos bloom out of the roses, then the gift opens by itself -->
   <div

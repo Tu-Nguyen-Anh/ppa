@@ -1,3 +1,73 @@
 :host {
   display: block;
 }
+
+/*
+ * Background neon name: an SVG handwriting path whose glowing stroke draws itself ALONG the strokes
+ * (stroke-dashoffset on a pathLength-normalised path), lighting up letter by letter, then fading and
+ * looping. A faint base copy is the unlit "tube". The SVG scales to fit, so the name is never clipped.
+ */
+.wd-led-svg {
+  width: min(88cqw, 720px);
+  height: auto;
+  overflow: visible; /* let the glow spill past the viewBox */
+  /* Promote to its own compositor layer so the glow repaint doesn't drag the sky canvas with it. */
+  transform: translateZ(0);
+  will-change: opacity;
+  contain: paint;
+}
+
+.wd-led-base,
+.wd-led-draw {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Unlit tube: the whole name faintly visible. */
+.wd-led-base {
+  stroke: rgba(255, 190, 222, 0.14);
+  stroke-width: 2.6;
+}
+
+/* Lit neon: drawn along the path. Two drop-shadows only (cheaper than four) still read as a pink glow. */
+.wd-led-draw {
+  stroke: #fff2f8;
+  stroke-width: 3.1;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  filter:
+    drop-shadow(0 0 2.5px #ff8abf)
+    drop-shadow(0 0 8px rgba(255, 80, 160, 0.85));
+  will-change: stroke-dashoffset;
+  animation: wd-led-draw 5.4s ease-in-out infinite;
+}
+
+@keyframes wd-led-draw {
+  0% {
+    stroke-dashoffset: 1;
+    opacity: 1;
+  }
+  /* light up along the strokes */
+  52% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  /* hold fully lit */
+  82% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  /* fade out, then the loop restarts while invisible (no visible jump) */
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wd-led-draw {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
