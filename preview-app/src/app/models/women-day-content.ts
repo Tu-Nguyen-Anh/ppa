@@ -77,7 +77,7 @@ const DEFAULT_LETTER = [
   '',
   'Nhân ngày 20/10, tớ chúc Phương Anh thật nhiều sức khỏe, lúc nào cũng xinh xắn, rạng rỡ và vui vẻ nhé.',
   '',
-  'Mong những điều dễ thương nhất sẽ luôn đến với Phương Anh. Chạm vào bó hoa để xem điều bất ngờ nha.'
+  'Mong những điều dễ thương nhất sẽ luôn đến với Phương Anh. Chúc những điều tốt đẹp nhất sẽ đến với cậu.'
 ].join('\n');
 
 /** Photo paths that make the demo card look populated when a Thiep provides none. */
